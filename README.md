@@ -3,7 +3,7 @@ An example of an application of metaheuristics to the domain of Natural Language
 
 In this example, a genetic algorithm is designed for generating automatically a text summarization by extraction.
 
-#### Install and run the code
+## Install and run the code
 
 - download all the repository from GitHub
 - in a terminal, move inside the directory downloaded
