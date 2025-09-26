@@ -8,7 +8,7 @@ using Statistics
 using Plots
 
 # =============================================================================
-# 0) Texte d'entrée
+# 0) Texte d'entree à resumer (tire de la these de doctorat de Manon Perrignon)
 
 text = """
 D’ici 2050, la population mondiale devrait atteindre environ 9,7 milliards d’habitants tirant la demande alimentaire vers des niveaux de production que le secteur aura du mal à satisfaire en respectant les préceptes de la durabilité sans mutations profondes de la filière. 
@@ -43,19 +43,19 @@ L’objectif réside donc dans la conception et la mise en œuvre d’une approc
 
 
 # =============================================================================
-# 1) découpage
+# 1) decoupage
 
-# découpage en phrases (expression régulière simple)
+# decoupage en phrases (expression réguliere simple)
 sentences = split(strip(text), r"(?<=[\.\?!])\s+")
-# retirer éventuels éléments vides
+# retirer d'eventuels elements vides
 sentences = [s for s in sentences if !isempty(s)]
 
 
 # =============================================================================
-# 2) nettoyage simple au niveau de la chaîne  
+# 2) nettoyage simple au niveau de la chaine  
 
 function clean_string(s::AbstractString)
-    s2 = replace(s, r"[[:punct:]]+" => " ")   # enlève la ponctuation
+    s2 = replace(s, r"[[:punct:]]+" => " ")   # enleve la ponctuation
     s2 = lowercase(s2)                        # minuscules
     s2 = strip(s2)
     return s2
@@ -79,7 +79,7 @@ text_vector = vec(mean(tfidf, dims=1))
 
 
 # =============================================================================
-# Similarité cosinus
+# Similarite cosinus
 
 epsval() = eps(Float64)
 function cosine_similarity(a::AbstractVector, b::AbstractVector)
@@ -92,11 +92,11 @@ end
 # Fitness
 #
 #   sim : 
-#       Représentativité : similarité entre résumé et texte original
+#       Representativite : similarite entre resume et texte original
 #   redundancy_penalty : 
-#       Cohérence / Redondance faible : pénaliser si les phrases sélectionnées sont trop similaires
+#       Coherence / Redondance faible : penaliser si les phrases selectionnées sont trop similaires
 #   length_penalty : 
-#       Longueur cible : pénaliser si trop court ou trop long (par ex. max 30% du texte original).
+#       Longueur cible : penaliser si trop court ou trop long (par ex. max 30% du texte original).
 
 
 function fitness(chromosome::Vector{Int}; α::Float64=1.0, β::Float64=0.5, γ::Float64=0.3)    
@@ -127,11 +127,11 @@ end
 
 
 # =============================================================================
-# Algorithme génétique
+# Algorithme genetique
 #
-#    Chaque individu de la population représente un résumé candidat.
+#    Chaque individu de la population represente un resume candidat.
 #    Codage d'un individu : vecteur binaire de longueur = nb de phrases du texte (1 = phrase incluse, 0 = exclue).
-#    Exemple : [1, 0, 0, 1, 1] → résumé composé des phrases 1, 4 et 5.
+#    Exemple : [1, 0, 0, 1, 1] → resume compose des phrases 1, 4 et 5.
 
 function genetic_algorithm(; pop_size::Int=40, 
                              generations::Int=100, 
@@ -141,7 +141,7 @@ function genetic_algorithm(; pop_size::Int=40,
                              γ::Float64=0.3
                             )    
 
-    # Initialisation : une population aléatoire de résumés --------------------                        
+    # Initialisation : une population aleatoire de resumes --------------------                        
     n = length(sentences)
     population = [rand(0:1, n) for _ in 1:pop_size]
 
@@ -149,7 +149,7 @@ function genetic_algorithm(; pop_size::Int=40,
     best_score = -Inf                   # le score du meilleur individu est par defaut - infini
     lBest = []
 
-    # Itérations : répéter pour un nombre de générations fixé -----------------
+    # Iterations : repeter pour un nombre de generations fixe -----------------
     for gen in 1:generations
 
         # Evaluation : calcul du fitness de chaque individu de la population courante
@@ -164,7 +164,7 @@ function genetic_algorithm(; pop_size::Int=40,
         end
         push!(lBest,best_score)
 
-        # Sélection : par classement (conserve 50% des meilleurs individus de la population courante)
+        # Selection : par classement (conserve 50% des meilleurs individus de la population courante)
         order = sortperm(scores, rev=true)
         elites = [population[i] for i in order[1:div(pop_size,2)]]
         next_pop = deepcopy(elites)
@@ -172,7 +172,7 @@ function genetic_algorithm(; pop_size::Int=40,
         # Application des operateurs evolutionnaires afin de produire des enfants
         while length(next_pop) < pop_size
 
-            # Croisement : échange de segments de chromosomes (phrases sélectionnées)
+            # Croisement : echange de segments de chromosomes (phrases selectionnees)
             p1 = elites[rand(1:length(elites))]
             p2 = elites[rand(1:length(elites))]
             cut = rand(1:n-1)
@@ -199,23 +199,23 @@ end
 # =============================================================================
 # Point d'entree principal
 
-# Paramètres du fitness
-#   α : importance de la similarité :
-#       α=0.0   →  pas de similarité
-#       α=1.0   →  similarité maximale (valeur par défaut)
-#   β : importance de la pénalité de redondance : 
-#       β=0.0   →  pas de pénalité
+# Parametres du fitness
+#   α : importance de la similarite :
+#       α=0.0   →  pas de similarite
+#       α=1.0   →  similarite maximale (valeur par defaut)
+#   β : importance de la penalite de redondance : 
+#       β=0.0   →  pas de pénalite
 #       β grand →  plus forte incitation à choisir des phrases différentes
-#   γ : importance de la pénalité de longueur 
-#       γ petit →  résumé plus court
-#       γ grand →  résumé plus long
+#   γ : importance de la penalite de longueur 
+#       γ petit →  resume plus court
+#       γ grand →  resume plus long
 
-# obtient l’individu avec le meilleur score de fitness → résumé final
+# obtient l’individu avec le meilleur score de fitness → resume final
 best, score, lBest = genetic_algorithm(pop_size=50, generations=50, mutation_rate=0.1, α=1.0, β=0.0, γ=0.3)
 chosen_i = findall(x -> x == 1, best)
 
 println("Score du meilleur individu : ", round(score, digits=4))
-println("Résumé (phrases choisies) :")
+println("Resume (phrases choisies) :")
 println(join(sentences[chosen_i], " "))
 
 plot(title="Extractive Text Summarization by GA",
